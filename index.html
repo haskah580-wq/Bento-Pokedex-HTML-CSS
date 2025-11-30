@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pokédex — Gen 1–9 (Pokeventur)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#071527; --bg2:#0b2433; --card:#0f2330; --muted:#98a8b6;
+    --accent:#ffd166; --glass:rgba(255,255,255,0.03);
+    font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;
+    color-scheme:dark;
+  }
+  html,body{height:100%;margin:0;background:radial-gradient(1200px 600px at 10% 10%, rgba(255,209,102,0.04), transparent 5%),
+             linear-gradient(180deg,var(--bg1),var(--bg2)); color:#e9f2fb;}
+  .wrap{max-width:1180px;margin:18px auto;padding:18px;display:grid;grid-template-columns:280px 1fr;gap:18px}
+  @media (max-width:880px){ .wrap{grid-template-columns:1fr;padding:10px} .sidebar{order:2} .main{order:1} }
+
+  /* SIDEBAR */
+  .sidebar{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03)}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#ffd166,#ff7a66);display:grid;place-items:center;font-weight:800;color:#07202a}
+  .brand h1{margin:0;font-size:18px} .brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+
+  .controls{margin-top:12px;display:flex;gap:8px;flex-direction:column}
+  .search{display:flex;gap:8px;background:var(--card);padding:8px;border-radius:10px}
+  .search input{background:transparent;border:0;color:inherit;outline:0;width:100%}
+  .filter-types{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .type-btn{padding:6px 8px;border-radius:999px;background:transparent;border:1px solid rgba(255,255,255,0.03);font-size:13px;color:var(--muted);cursor:pointer}
+  .type-btn.active{background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));color:var(--accent);border-color:rgba(255,255,255,0.06)}
+
+  /* MAIN */
+  .main{display:flex;flex-direction:column;gap:12px}
+  .header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .title{font-size:22px;margin:0}
+  .meta{color:var(--muted);font-size:13px}
+
+  .gen-row{display:flex;gap:8px;align-items:center}
+  .gen-select{background:var(--card);border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:10px;color:inherit}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:transform .12s ease,box-shadow .12s}
+  .card:hover{transform:translateY(-6px);box-shadow:0 12px 30px rgba(2,6,23,0.6)}
+  .card .top{display:flex;align-items:center;gap:8px}
+  .sprite-wrap{width:68px;height:68px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);display:grid;place-items:center;border:1px solid rgba(255,255,255,0.03);overflow:hidden}
+  .sprite{width:64px;height:64px;image-rendering:pixelated; animation:bob 1.8s ease-in-out infinite}
+  @keyframes bob{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+
+  .name{font-weight:700;font-size:15px}
+  .dex{color:var(--muted);font-size:12px}
+
+  /* DETAIL PANEL */
+  .detail{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03);min-height:220px}
+  .detail-top{display:flex;gap:18px;align-items:center}
+  .big-sprite{width:160px;height:160px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);display:grid;place-items:center;border:1px solid rgba(255,255,255,0.03)}
+  .big-sprite img{width:140px;height:140px;image-rendering:pixelated;animation:bob 1.8s ease-in-out infinite}
+  .info{flex:1}
+  .types{display:flex;gap:8px;margin-top:8px}
+  .type-pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);font-weight:700;font-size:13px}
+
+  .stats{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .stat-row{display:flex;justify-content:space-between;align-items:center}
+  .stat-bar{height:8px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden;width:50%;margin-left:12px}
+  .stat-fill{height:100%;background:linear-gradient(90deg,#7ee8fa,#80ffd1);border-radius:999px}
+
+  .moves{margin-top:10px;max-height:220px;overflow:auto;padding-right:6px}
+  .move-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.02);font-size:13px;color:var(--muted)}
+
+  footer{color:var(--muted);text-align:center;margin-top:12px;font-size:13px}
+
+  .loader{display:grid;place-items:center;padding:40px;color:var(--muted)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">PV</div>
+        <div>
+          <h1>Pokeventur Pokédex</h1>
+          <p>Gen 1–9 • klik untuk lihat detail</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="#9fb6d3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="#9fb6d3" stroke-width="1.6"/></svg>
+          <input id="search" placeholder="Cari (nama / dex)..." />
+        </div>
+
+        <div style="margin-top:8px;color:var(--muted);font-size:13px">Filter tipe:</div>
+        <div class="filter-types" id="typeFilter"></div>
+
+        <div style="margin-top:12px;color:var(--muted);font-size:13px">
+          Tips: tekan <code>/</code> untuk fokus search. Pilih generasi lewat dropdown.
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header">
+        <div>
+          <h2 class="title">Pokédex Gen 1–9</h2>
+          <div class="meta" id="metaInfo">Memuat daftar Pokémon…</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="gen-row">
+            <select id="genSelect" class="gen-select" aria-label="Pilih generasi">
+              <option value="1">Gen 1 (1–151)</option>
+              <option value="2">Gen 2 (152–251)</option>
+              <option value="3">Gen 3 (252–386)</option>
+              <option value="4">Gen 4 (387–493)</option>
+              <option value="5">Gen 5 (494–649)</option>
+              <option value="6">Gen 6 (650–721)</option>
+              <option value="7">Gen 7 (722–809)</option>
+              <option value="8">Gen 8 (810–898)</option>
+              <option value="9">Gen 9 (906–1025)</option>
+            </select>
+          </div>
+          <div style="color:var(--muted);font-size:13px">Total: <span id="count">0</span></div>
+        </div>
+      </div>
+
+      <section>
+        <div id="grid" class="grid"></div>
+        <div id="gridLoader" class="loader" style="display:none">Memuat...</div>
+      </section>
+
+      <section class="detail" id="detailPanel" style="display:none">
+        <div class="detail-top">
+          <div class="big-sprite" id="bigSprite">—</div>
+          <div class="info">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-weight:800;font-size:20px" id="pName">—</div>
+                <div class="dex" id="pDex">#000</div>
+                <div class="types" id="pTypes"></div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;color:var(--muted)" id="pSpecies">Species</div>
+                <div style="margin-top:8px;font-weight:700" id="pGen">Gen</div>
+              </div>
+            </div>
+
+            <div class="stats" id="pStats"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:12px">
+          <div style="flex:1">
+            <div style="font-weight:700;margin-bottom:6px">Moves</div>
+            <div class="moves" id="pMoves">—</div>
+          </div>
+          <div style="width:260px">
+            <div style="font-weight:700;margin-bottom:6px">Info cepat</div>
+            <div style="color:var(--muted);font-size:13px">Height: <span id="pHeight">-</span> • Weight: <span id="pWeight">-</span></div>
+            <div style="margin-top:8px;color:var(--muted)">Abilities:</div>
+            <div id="pAbilities" style="margin-top:6px"></div>
+            <div style="margin-top:10px;color:var(--muted)">Base experience: <span id="pExp">-</span></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer>© Pokeventur — Pokédex Gen 1–9 (data via PokeAPI)</footer>
+
+<script>
+/*
+  Pokédex Gen 1–9 viewer (dropdown)
+  - dropdown pilih generasi
+  - fetch generation lists, load pokemon/{id} for sprites & details on click
+  - genRanges use commonly accepted national dex ranges:
+    Gen1: 1-151, Gen2: 152-251, Gen3: 252-386, Gen4: 387-493,
+    Gen5: 494-649, Gen6: 650-721, Gen7: 722-809, Gen8: 810-898, Gen9: 906-1025
+  Note: PokeAPI generation endpoints are used; this code additionally filters species by national id range
+*/
+
+const API = 'https://pokeapi.co/api/v2';
+const genUrls = {
+  1: API + '/generation/1',
+  2: API + '/generation/2',
+  3: API + '/generation/3',
+  4: API + '/generation/4',
+  5: API + '/generation/5',
+  6: API + '/generation/6',
+  7: API + '/generation/7',
+  8: API + '/generation/8',
+  9: API + '/generation/9'
+};
+// national dex ranges (commonly used)
+const genRanges = {
+  1:[1,151],
+  2:[152,251],
+  3:[252,386],
+  4:[387,493],
+  5:[494,649],
+  6:[650,721],
+  7:[722,809],
+  8:[810,898],
+  9:[906,1025]
+};
+
+const typeColors = {
+  normal:'#A8A77A', fire:'#EE8130', water:'#6390F0', electric:'#F7D02C', grass:'#7AC74C',
+  ice:'#96D9D6', fighting:'#C22E28', poison:'#A33EA1', ground:'#E2BF65', flying:'#A98FF3',
+  psychic:'#F95587', bug:'#A6B91A', rock:'#B6A136', ghost:'#735797', dragon:'#6F35FC',
+  dark:'#705746', steel:'#B7B7CE', fairy:'#D685AD'
+};
+
+let speciesList = []; // current generation list
+let currentGen = 1;
+let currentTypeFilter = 'all';
+
+const grid = document.getElementById('grid');
+const metaInfo = document.getElementById('metaInfo');
+const countEl = document.getElementById('count');
+const gridLoader = document.getElementById('gridLoader');
+
+const detailPanel = document.getElementById('detailPanel');
+const bigSprite = document.getElementById('bigSprite');
+const pName = document.getElementById('pName');
+const pDex = document.getElementById('pDex');
+const pTypes = document.getElementById('pTypes');
+const pStats = document.getElementById('pStats');
+const pMoves = document.getElementById('pMoves');
+const pHeight = document.getElementById('pHeight');
+const pWeight = document.getElementById('pWeight');
+const pAbilities = document.getElementById('pAbilities');
+const pExp = document.getElementById('pExp');
+const pSpecies = document.getElementById('pSpecies');
+const pGen = document.getElementById('pGen');
+
+const typeFilterEl = document.getElementById('typeFilter');
+const searchInput = document.getElementById('search');
+const genSelect = document.getElementById('genSelect');
+
+function createTypeButtons(){
+  typeFilterEl.innerHTML = '';
+  const types = ['all','normal','fire','water','electric','grass','ice','fighting','poison','ground','flying','psychic','bug','rock','ghost','dragon','dark','steel','fairy'];
+  types.forEach(t=>{
+    const btn = document.createElement('button');
+    btn.className = 'type-btn' + (t==='all' ? ' active' : '');
+    btn.textContent = t === 'all' ? 'All' : capitalize(t);
+    btn.dataset.type = t;
+    btn.addEventListener('click', () => {
+      [...typeFilterEl.querySelectorAll('.type-btn')].forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTypeFilter = t;
+      renderGrid();
+    });
+    typeFilterEl.appendChild(btn);
+  });
+}
+
+function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1) }
+
+async function initForGen(gen){
+  currentGen = Number(gen);
+  genSelect.value = String(currentGen);
+  createTypeButtons();
+  metaInfo.textContent = `Mengambil daftar Pokémon Gen ${gen}…`;
+  grid.innerHTML = '';
+  try{
+    const res = await fetch(genUrls[gen]);
+    const genData = await res.json();
+    const [minId, maxId] = genRanges[gen] || [1,151];
+    speciesList = genData.pokemon_species
+      .map(s=> {
+        const parts = s.url.split('/').filter(Boolean);
+        const id = parseInt(parts[parts.length-1],10);
+        return {name:s.name, url:s.url, id};
+      })
+      // Filter to national dex range for this gen (some generation endpoints can include forms)
+      .filter(s=> s.id >= minId && s.id <= maxId)
+      .sort((a,b)=>a.id - b.id);
+    countEl.textContent = speciesList.length;
+    metaInfo.textContent = 'Klik sebuah Pokémon untuk lihat detail';
+    renderGrid();
+  }catch(err){
+    console.error(err);
+    metaInfo.textContent = 'Gagal memuat daftar — periksa koneksi';
+  }
+}
+
+// render grid with minimal info (id + name + small sprite)
+async function renderGrid(){
+  grid.innerHTML = '';
+  const q = searchInput.value.trim().toLowerCase();
+  gridLoader.style.display = 'grid';
+
+  const filtered = speciesList.filter(s=>{
+    if(!q) return true;
+    return s.name.includes(q) || s.id.toString() === q;
+  });
+
+  metaInfo.textContent = `Menampilkan ${filtered.length} Pokémon. Memuat sprite...`;
+  countEl.textContent = filtered.length;
+
+  // For better user experience we fetch details in parallel but limit concurrency
+  const concurrency = 8;
+  let index = 0;
+  const results = [];
+  async function worker(){
+    while(index < filtered.length){
+      const i = index++;
+      const s = filtered[i];
+      try{
+        const pokeRes = await fetch(`${API}/pokemon/${s.id}`);
+        const poke = await pokeRes.json();
+        const sprite = poke.sprites.other['official-artwork'].front_default || poke.sprites.front_default;
+        const types = poke.types.map(t=>t.type.name);
+        if(currentTypeFilter !== 'all' && !types.includes(currentTypeFilter)) { results[i] = null; continue; }
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.dataset.id = s.id;
+        card.innerHTML = `
+          <div class="top">
+            <div class="sprite-wrap"><img class="sprite" src="${sprite}" alt="${s.name}" /></div>
+            <div style="flex:1">
+              <div class="name">${capitalize(s.name)}</div>
+              <div class="dex">#${String(s.id).padStart(3,'0')}</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:13px;color:var(--muted)">${types.map(t=>'<span style="padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-weight:700">'+capitalize(t)+'</span>').join(' ')}</div>
+            <div style="font-weight:700;color:var(--muted);font-size:13px">Gen ${currentGen}</div>
+          </div>
+        `;
+        card.addEventListener('click', ()=> loadDetails(s.id));
+        results[i] = card;
+      }catch(e){
+        results[i] = null;
+      }
+    }
+  }
+  // start workers
+  await Promise.all(new Array(concurrency).fill(0).map(worker));
+  // append in order
+  results.forEach(r=>{ if(r) grid.appendChild(r) });
+
+  if(grid.children.length === 0){
+    grid.innerHTML = '<div class="loader">Tidak ada Pokémon yang sesuai filter / pencarian.</div>';
+  }
+  gridLoader.style.display = 'none';
+  metaInfo.textContent = 'Selesai memuat. Klik Pokémon untuk lihat detail.';
+}
+
+// load details for selected Pokemon ID
+async function loadDetails(id){
+  detailPanel.style.display = 'block';
+  pName.textContent = 'Memuat…';
+  pDex.textContent = `#${String(id).padStart(3,'0')}`;
+  pTypes.innerHTML = ''; pStats.innerHTML = ''; pMoves.innerHTML = ''; pAbilities.innerHTML=''; bigSprite.innerHTML='Memuat...';
+  try{
+    const res = await fetch(`${API}/pokemon/${id}`);
+    const data = await res.json();
+    const speciesRes = await fetch(data.species.url);
+    const species = await speciesRes.json();
+    const sprite = data.sprites.other['official-artwork'].front_default || data.sprites.front_default;
+    bigSprite.innerHTML = `<img src="${sprite}" alt="${data.name}" />`;
+    pName.textContent = capitalize(data.name);
+    pDex.textContent = `#${String(id).padStart(3,'0')}`;
+    pSpecies.textContent = species.genera.find(g=>g.language.name==='en')?.genus || species.genera[0]?.genus || '';
+    pGen.textContent = `Gen ${currentGen}`;
+    pTypes.innerHTML = data.types.map(t=>`<div class="type-pill" style="background:${typeColors[t.type.name]||'#666'}20;color:${typeColors[t.type.name]||'#fff'}">${capitalize(t.type.name)}</div>`).join('');
+    pStats.innerHTML = '';
+    data.stats.forEach(s=>{
+      const val = s.base_stat;
+      const max = 200;
+      const pct = Math.min(100, Math.round(val/max*100));
+      const row = document.createElement('div');
+      row.className='stat-row';
+      row.innerHTML = `<div style="width:140px">${capitalize(s.stat.name.replace('special-','Sp.'))}</div>
+                       <div style="display:flex;align-items:center;width:100%"><div style="font-weight:700;width:36px;text-align:right">${val}</div><div class="stat-bar"><div class="stat-fill" style="width:${pct}%"></div></div></div>`;
+      pStats.appendChild(row);
+    });
+    pAbilities.innerHTML = data.abilities.map(a=>{
+      return `<div style="margin-top:6px;font-weight:700">${capitalize(a.ability.name.replace('-',' '))}${a.is_hidden? ' (hidden)':''}</div>`;
+    }).join('');
+    pHeight.textContent = (data.height/10) + ' m';
+    pWeight.textContent = (data.weight/10) + ' kg';
+    pExp.textContent = data.base_experience || '-';
+
+    pMoves.innerHTML = '';
+    const moves = data.moves.map(m=>{
+      const mg = m.version_group_details.find(vgd => {
+        // prefer generation-specific version groups when available
+        return vgd.version_group.name.includes('gold') || vgd.version_group.name.includes('silver') || vgd.version_group.name.includes('crystal') || vgd.version_group.name.includes('ruby') || vgd.version_group.name.includes('sapphire') || vgd.version_group.name.includes('emerald') || vgd.version_group.name.includes('diamond') || vgd.version_group.name.includes('pearl') || vgd.version_group.name.includes('platinum') || vgd.version_group.name.includes('red') || vgd.version_group.name.includes('blue') || vgd.version_group.name.includes('yellow') || vgd.version_group.name.includes('black') || vgd.version_group.name.includes('white') || vgd.version_group.name.includes('x') || vgd.version_group.name.includes('y') || vgd.version_group.name.includes('sun') || vgd.version_group.name.includes('moon') || vgd.version_group.name.includes('scarlet') || vgd.version_group.name.includes('violet');
+      }) || m.version_group_details[0];
+      return {name: m.move.name, method: mg ? mg.move_learn_method.name : '', level: mg ? mg.level_learned_at : 0};
+    }).sort((a,b)=> a.level - b.level || a.name.localeCompare(b.name));
+    moves.forEach(m=>{
+      const item = document.createElement('div');
+      item.className = 'move-item';
+      item.innerHTML = `<div>${capitalize(m.name.replace('-',' '))}</div><div style="color:var(--muted)">${m.method==='level-up' ? 'Lv '+m.level : capitalize(m.method.replace('-',' '))}</div>`;
+      pMoves.appendChild(item);
+    });
+
+    detailPanel.scrollIntoView({behavior:'smooth', block:'center'});
+  }catch(err){
+    console.error(err);
+    pName.textContent = 'Gagal memuat';
+  }
+}
+
+// events
+searchInput.addEventListener('input', ()=> renderGrid());
+window.addEventListener('keydown', (e)=> { if(e.key === '/') { e.preventDefault(); searchInput.focus(); }});
+genSelect.addEventListener('change', ()=> initForGen(Number(genSelect.value)));
+
+// init with Gen 1
+initForGen(1);
+
+</script>
+</body>
+</html>
